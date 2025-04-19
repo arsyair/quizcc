@@ -1,23 +1,30 @@
-name: Deploy to EC2
+name: Deploy to AWS EC2
 
 on:
   push:
     branches:
-      - main  # Menjalankan workflow saat ada commit ke branch 'main'
+      - main # Trigger deployment on push to main branch
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest  # GitHub Actions akan menjalankan job di Ubuntu
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2  # Menarik kode dari GitHub
+      - name: Checkout code
+        uses: actions/checkout@v2
 
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.5.3
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}  # SSH key yang digunakan untuk akses EC2
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Deploy to EC2
+      - name: Deploy to ECS
         run: |
-          ssh -o StrictHostKeyChecking=no ec2-user@3.107.70.158 'cd /var/www/html && git pull origin main'
+          ssh -o StrictHostKeyChecking=no ubuntu@3.107.70.158 << 'EOF'
+            cd /var/www/html/quizcc
+            git pull origin main
+            # Restart Nginx or any other service if needed
+            sudo systemctl restart nginx
+          EOF
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
